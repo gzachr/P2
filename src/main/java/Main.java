@@ -9,9 +9,102 @@ public class Main {
     static int t1;
     static int t2;
 
+    static int totalPartyCount;
+    static int remainingPartyCounter;
+
+    static DungeonInstance[] instances;
+
     public static void main(String[] args) {
         getAllInputs();
 
+        totalPartyCount = Math.min(tankCount, Math.min(healerCount, dpsCount / 3));
+        remainingPartyCounter = totalPartyCount;
+
+        instances = new DungeonInstance[nInstances];
+
+        for(int i = 0; i < nInstances; i++) {
+            instances[i] = new DungeonInstance(i, t1, t2);
+        }
+
+        processParties();
+
+
+        displayEndStats();
+    }
+
+    static void processParties() {
+        Thread checkDungeonStatus = getStatusThread();
+
+        while(remainingPartyCounter != 0) {
+            for (DungeonInstance instance : instances) {
+                if (instance.isAvailable() && remainingPartyCounter != 0) {
+                    instance.start();
+                    remainingPartyCounter--;
+                }
+            }
+        }
+
+        // make sure all dungeons finish processing before returning control back to main
+        while (!areDungeonsFinished()) {
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            checkDungeonStatus.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static boolean areDungeonsFinished() {
+        for (DungeonInstance instance : instances) {
+            if (!instance.isAvailable()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Thread getStatusThread() {
+        int sleepTimer = 1000;
+        Thread checkDungeonStatus = new Thread(() -> {
+            while(remainingPartyCounter > 0 && !areDungeonsFinished()) {
+                System.out.println("\nDungeon Availability Status:");
+                for (DungeonInstance instance : instances) {
+                    System.out.println("Instance " + instance.getId() + " - Status: " + instance.getStatus());
+                }
+
+                try {
+                    Thread.sleep(sleepTimer);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
+
+        checkDungeonStatus.start();
+        return checkDungeonStatus;
+    }
+
+    static void displayEndStats() {
+        System.out.println("--------------------------------------------");
+        System.out.println("Leftover Tanks: " + (tankCount - totalPartyCount));
+        System.out.println("Leftover Healers: " + (healerCount - totalPartyCount));
+        System.out.println("Leftover Dps: " + (dpsCount  - totalPartyCount * 3));
+
+        System.out.println("\nDungeon Instances Information");
+
+        for(DungeonInstance instance : instances) {
+            System.out.println("Instance#" + instance.getId());
+            System.out.println("Parties Served: " + instance.getPartiesServed());
+            System.out.println("Total Running Time (seconds): " + instance.getTotalRunningTime() + "\n");
+        }
     }
 
     static void getAllInputs() {
@@ -28,13 +121,14 @@ public class Main {
         int value;
         while (true) {
             System.out.print(prompt);
+
             try {
                 value = scanner.nextInt();
                 if (type != 'd' && value < 1) throw new InputMismatchException();
                 else if (type == 'd' && value < 3) throw new LackingDpsException();
                 return value;
             } catch (InputMismatchException e) {
-                System.out.println("Error, must input a valid integer greater than 0\n");
+                System.out.println("Error, input must fit in an integer and be greater than 0\n");
                 scanner.nextLine(); // Clear invalid input
             } catch (LackingDpsException e) {
                 System.out.println("Error, minimum dps input is 3\n");
