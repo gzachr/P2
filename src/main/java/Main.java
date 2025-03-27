@@ -20,7 +20,12 @@ public class Main {
         totalPartyCount = Math.min(tankCount, Math.min(healerCount, dpsCount / 3));
         remainingPartyCounter = totalPartyCount;
 
-        instances = new DungeonInstance[nInstances];
+        try {
+            instances = new DungeonInstance[nInstances];
+        } catch (OutOfMemoryError e) {
+            System.out.println("Device does not have memory to create that many instances, exiting program");
+            return;
+        }
 
         for(int i = 0; i < nInstances; i++) {
             instances[i] = new DungeonInstance(i, t1, t2);
@@ -66,7 +71,7 @@ public class Main {
 
 
     static void displayEndStats() {
-        System.out.println("--------------------------------------------");
+        System.out.println("\n--------------------------------------------");
         System.out.println("Leftover Tanks: " + (tankCount - totalPartyCount));
         System.out.println("Leftover Healers: " + (healerCount - totalPartyCount));
         System.out.println("Leftover Dps: " + (dpsCount  - totalPartyCount * 3));
@@ -100,7 +105,7 @@ public class Main {
                 dpsCount = validateSingleInput(inputs[3], 'd');
                 t1 = getClearTime(inputs[4], 1);
                 t2 = getClearTime(inputs[5], 2);
-                System.out.println("Valid input received.");
+                System.out.println("Valid input received.\n");
                 break;
             } catch (Exception e) {
                 System.out.println("Please try again.\n");
@@ -121,7 +126,7 @@ public class Main {
             }
             return value;
         } catch (NumberFormatException e) {
-            System.out.println("Error, Input is not an integer");
+            System.out.println("Error, an input is not an integer");
             throw new InputMismatchException();
         }
     }
@@ -141,7 +146,7 @@ public class Main {
             }
             return value;
         } catch (NumberFormatException e) {
-            System.out.println("Error, Input is not an integer");
+            System.out.println("Error, an input is not an integer");
             throw new InputMismatchException();
         }
     }
