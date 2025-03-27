@@ -33,7 +33,6 @@ public class Main {
     }
 
     static void processParties() {
-        Thread checkDungeonStatus = getStatusThread();
 
         while(remainingPartyCounter != 0) {
             for (DungeonInstance instance : instances) {
@@ -54,11 +53,6 @@ public class Main {
             }
         }
 
-        try {
-            checkDungeonStatus.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     static boolean areDungeonsFinished() {
@@ -70,27 +64,6 @@ public class Main {
         return true;
     }
 
-    private static Thread getStatusThread() {
-        int sleepTimer = 1000;
-        Thread checkDungeonStatus = new Thread(() -> {
-            while(remainingPartyCounter > 0 && !areDungeonsFinished()) {
-                System.out.println("\nDungeon Availability Status:");
-                for (DungeonInstance instance : instances) {
-                    System.out.println("Instance " + instance.getId() + " - Status: " + instance.getStatus());
-                }
-
-                try {
-                    Thread.sleep(sleepTimer);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-        });
-
-        checkDungeonStatus.start();
-        return checkDungeonStatus;
-    }
 
     static void displayEndStats() {
         System.out.println("--------------------------------------------");
@@ -108,55 +81,68 @@ public class Main {
     }
 
     static void getAllInputs() {
-        nInstances = validateSingleInput("Input the number of dungeon instances (n): ", 'n');
-        tankCount = validateSingleInput("Input the number of tank players (t): ", 't');
-        healerCount = validateSingleInput("Input the number of healer players (h): ", 'h');
-        dpsCount = validateSingleInput("Input the number of dps players(d): ", 'd');
-        t1 = getClearTime(1, "Input the fastest dungeon clear time (t1): ");
-        t2 = getClearTime(2, "Input the slowest dungeon clear time (t2): ");
-    }
-
-    static int validateSingleInput(String prompt, char type) {
         Scanner scanner = new Scanner(System.in);
-        int value;
-        while (true) {
-            System.out.print(prompt);
+
+        while(true) {
+            System.out.print("Enter all inputs separated by commas (n, t, h, d, t1, t2): ");
+            String inputLine = scanner.nextLine();
+            String[] inputs = inputLine.split(",\s*");
+
+            if (inputs.length != 6) {
+                System.out.println("Error: You must enter exactly 6 values.");
+                continue;
+            }
 
             try {
-                value = scanner.nextInt();
-                if (type != 'd' && value < 1) throw new InputMismatchException();
-                else if (type == 'd' && value < 3) throw new LackingDpsException();
-                return value;
-            } catch (InputMismatchException e) {
-                System.out.println("Error, input must fit in an integer and be greater than 0\n");
-                scanner.nextLine(); // Clear invalid input
-            } catch (LackingDpsException e) {
-                System.out.println("Error, minimum dps input is 3\n");
-                scanner.nextLine();
+                nInstances = validateSingleInput(inputs[0], 'n');
+                tankCount = validateSingleInput(inputs[1], 't');
+                healerCount = validateSingleInput(inputs[2], 'h');
+                dpsCount = validateSingleInput(inputs[3], 'd');
+                t1 = getClearTime(inputs[4], 1);
+                t2 = getClearTime(inputs[5], 2);
+                System.out.println("Valid input received.");
+                break;
+            } catch (Exception e) {
+                System.out.println("Please try again.\n");
             }
         }
     }
 
-    // 1 for t1, 2 for t2
-    static int getClearTime(int type, String prompt) {
-        Scanner scanner = new Scanner(System.in);
-        int value;
-        while (true) {
-            System.out.print(prompt);
-            try {
-                value = scanner.nextInt();
-                if (value < 1 || value > 15) throw new InputMismatchException();
-                //error if t2 is less than t1
-                if(type == 2 && value < t1) throw new InvalidT2Exception();
-                return value;
-
-            } catch (InputMismatchException e) {
-                System.out.println("Error, must input a valid integer within the 1-15 range\n");
-                scanner.nextLine(); // Clear invalid input
-            } catch (InvalidT2Exception e) {
-                System.out.println("Error, T2 cannot be slower than T1\n");
-                scanner.nextLine();
+    static int validateSingleInput(String input, char type) {
+        try {
+            int value = Integer.parseInt(input.trim());
+            if (type != 'd' && value < 1) {
+                System.out.println("Error, Instance/Healer/Tank count must be a valid Integer greater than 0.");
+                throw new InputMismatchException();
             }
+            else if (type == 'd' && value < 3) {
+                System.out.println("Error, Dps Count must be a valid Integer >= 3");
+                throw new LackingDpsException();
+            }
+            return value;
+        } catch (NumberFormatException e) {
+            System.out.println("Error, Input is not an integer");
+            throw new InputMismatchException();
+        }
+    }
+
+    // 1 for t1, 2 for t2
+    static int getClearTime(String input, int type) {
+        try {
+            int value = Integer.parseInt(input.trim());
+            if (value < 1 || value > 15) {
+                System.out.println("Error, times must be a valid integer within the 1-15 range");
+                throw new InputMismatchException();
+            }
+            //error if t2 is less than t1
+            if(type == 2 && value < t1) {
+                System.out.println("Error, T2 cannot be slower than T1");
+                throw new InvalidT2Exception();
+            }
+            return value;
+        } catch (NumberFormatException e) {
+            System.out.println("Error, Input is not an integer");
+            throw new InputMismatchException();
         }
     }
 }

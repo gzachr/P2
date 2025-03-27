@@ -5,11 +5,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DungeonInstance implements Runnable{
     private static final Random random = new Random();
     private boolean active;
-    private int id;
+    private final int id;
     private AtomicInteger partiesServed = new AtomicInteger(0);
     private AtomicInteger totalRunningTime = new AtomicInteger(0);
-    private int t1;
-    private int t2;
+    private final int t1;
+    private final int t2;
 
     public DungeonInstance(int id, int min, int max) {
         this.active = false;
@@ -23,7 +23,7 @@ public class DungeonInstance implements Runnable{
         try {
             int dungeonTime = random.nextInt(t2 - t1 + 1) + t1;
 
-            System.out.println("[Instance " + id + "] Active | Clearing party... Time: " + dungeonTime + "s");
+            System.out.println("[Instance " + id + "] Active | Party will take " + dungeonTime + "s to clear.");
             TimeUnit.SECONDS.sleep(dungeonTime);
 
             synchronized (this) {
@@ -58,7 +58,4 @@ public class DungeonInstance implements Runnable{
         return totalRunningTime.get();
     }
 
-    public synchronized String getStatus() {
-        return active ? "Active" : "Empty";
-    }
 }
